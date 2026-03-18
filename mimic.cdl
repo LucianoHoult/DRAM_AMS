@@ -1,0 +1,84 @@
+* ======================================================================
+* NETLIST GENERATED FROM VIRTUOSO
+* TOP CELL: DRAM_BANK
+* ======================================================================
+
+* ----------------------------------------------------------------------
+* LEVEL 4: BITCELL (1T1C)
+* ----------------------------------------------------------------------
+.SUBCKT BITCELL BL WL SN VSS
+* Cell access transistor
+M0 BL WL SN VSS nmos_mac W=60n L=40n m=1
+* Storage capacitor
+C0 SN VSS 20f
+.ENDS BITCELL
+
+* ----------------------------------------------------------------------
+* LEVEL 3: SWD (Sub-Wordline Driver) & SA Components
+* ----------------------------------------------------------------------
+.SUBCKT SWD_EVEN MWL_E WL<0> WL<2> VPP VSS
+* Simplified inverter chain for even wordlines
+M_P0 WL<0> MWL_E VPP VPP pmos_mac W=0.5u L=0.1u m=2
+M_N0 WL<0> MWL_E VSS VSS nmos_mac W=0.2u 
++ L=0.1u m=1
+M_P1 WL<2> MWL_E VPP VPP pmos_mac W=0.5u L=0.1u m=2
+M_N1 WL<2> MWL_E VSS VSS nmos_mac W=0.2u L=0.1u m=1
+.ENDS SWD_EVEN
+
+.SUBCKT BLSA BL<0> BL_B<0> SAN SAP EQ CSL LIO LIO_B VSS
+* EQ / Precharge
+M_EQ1 BL<0> EQ VSS VSS nmos_mac W=0.2u L=0.1u
+M_EQ2 BL_B<0> EQ VSS VSS nmos_mac W=0.2u L=0.1u
+M_EQ3 BL<0> EQ BL_B<0> VSS nmos_mac W=0.2u L=0.1u
+
+* Cross-coupled inverters for sensing
+M_N1 BL<0> BL_B<0> SAN VSS nmos_mac W=0.4u L=0.1u
+M_N2 BL_B<0> BL<0> SAN VSS nmos_mac W=0.4u L=0.1u
+M_P1 BL<0> BL_B<0> SAP VPP pmos_mac W=0.8u L=0.1u
+M_P2 BL_B<0> BL<0> SAP VPP pmos_mac W=0.8u L=0.1u
+
+* Y-Gate column select
+M_Y1 BL<0> CSL LIO VSS nmos_mac W=0.4u L=0.1u
+M_Y2 BL_B<0> CSL LIO_B VSS nmos_mac W=0.4u L=0.1u
+.ENDS BLSA
+
+* ----------------------------------------------------------------------
+* LEVEL 2: ARRAY_SECTION & SA_SECTION
+* ----------------------------------------------------------------------
+.SUBCKT MAT BL<0> BL<1> WL<0> WL<1> WL<2> WL<3> VSS
+* 2x4 cell matrix example
+X_CELL_0_0 BL<0> WL<0> SN_0_0 VSS BITCELL
+X_CELL_0_1 BL<1> WL<0> SN_0_1 VSS BITCELL
+X_CELL_1_0 BL<0> WL<1> SN_1_0 VSS BITCELL
+X_CELL_1_1 BL<1> WL<1> SN_1_1 VSS BITCELL
+* Line continuation test in instantiation
+X_CELL_2_0 BL<0> WL<2> SN_2_0 
++ VSS BITCELL
+X_CELL_2_1 BL<1> WL<2> SN_2_1 VSS BITCELL
+X_CELL_3_0 BL<0> WL<3> SN_3_0 VSS BITCELL
+X_CELL_3_1 BL<1> WL<3> SN_3_1 VSS BITCELL
+.ENDS MAT
+
+.SUBCKT ARRAY_SECTION BL<0> BL<1> MWL_E MWL_O VPP VSS
+* Interleaved SWD and MAT structure
+X_SWD_E MWL_E WL<0> WL<2> VPP VSS SWD_EVEN
+X_MAT_0 BL<0> BL<1> WL<0> WL<1> WL<2> WL<3> VSS MAT
+* Missing odd driver here for brevity, assume WL<1>, WL<3> are driven externally or by SWD_ODD
+.ENDS ARRAY_SECTION
+
+.SUBCKT SA_SECTION BL<0> BL_B<0> BL<1> BL_B<1> SAN SAP EQ CSL LIO LIO_B VSS
+X_BLSA_0 BL<0> BL_B<0> SAN SAP EQ CSL LIO LIO_B VSS BLSA
+X_BLSA_1 BL<1> BL_B<1> SAN SAP EQ CSL LIO LIO_B VSS BLSA
+.ENDS SA_SECTION
+
+* ----------------------------------------------------------------------
+* LEVEL 1: TOP LEVEL DRAM BANK
+* ----------------------------------------------------------------------
+.SUBCKT DRAM_BANK MWL_E MWL_O SAN SAP EQ CSL LIO LIO_B VPP VSS
++ BL<0> BL<1> BL_B<0> BL_B<1>
+
+* Top level array instantiation
+X_ARRAY_SEC_0 BL<0> BL<1> MWL_E MWL_O VPP VSS ARRAY_SECTION
+X_SA_SEC_0 BL<0> BL_B<0> BL<1> BL_B<1> SAN SAP EQ CSL LIO LIO_B VSS SA_SECTION
+
+.ENDS DRAM_BANK
