@@ -1,0 +1,103 @@
+{
+  "project_info": {
+    "name": "DRAM_Array_Digital_Twin",
+    "target_simulator": "hspice",
+    "corner": "TT_25C"
+  },
+  
+  "netlist_rules": {
+    "top_subckt": "DRAM_BANK",
+    "bus_format": "<>"
+  },
+
+  "rc_extraction": {
+    "unit_metrics": {
+      "M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 0.2e-15},
+      "M2_BL_layer": {"R_per_um": 0.3, "C_per_um": 0.15e-15},
+      "M3_global_layer": {"R_per_um": 0.1, "C_per_um": 0.1e-15}
+    },
+    "core_array": {
+      "WL": {"layer": "M1_WL_layer", "length_um": 256.0, "pi_stages": 4},
+      "BL": {"layer": "M2_BL_layer", "length_um": 512.0, "pi_stages": 8}
+    },
+    "global_routes": {
+      "CSL": {
+        "layer": "M3_global_layer",
+        "pi_stages_per_segment": 2,
+        "topology": [
+          {"pass_through_inst": "X_SA_SECTION_0", "length_um": 120.0},
+          {"pass_through_inst": "X_CROSS_HOLE_0", "length_um": 20.0},
+          {"pass_through_inst": "X_SA_SECTION_1", "length_um": 120.0}
+        ]
+      }
+    }
+  },
+
+  "reduction_models": {
+    "placeholder_mode": true,
+    "inactive_MAT": {"C_eff_fF": 150.0, "I_leak_nA": 10.0},
+    "inactive_BLSA": {"C_eff_fF": 20.0, "I_leak_nA": 2.0}
+  },
+
+  "pattern_config": {
+    "storage_init": {
+      "pattern_type": "checkerboard",
+      "v_high": 1.2,
+      "v_low": 0.0
+    },
+    "access_location": {
+      "bank_idx": 0,
+      "row_idx": 128,
+      "col_idx": 64
+    }
+  },
+
+  "timing_measurement": {
+    "target_parameter": "tRAS",
+    "default_tr_ps": 50,
+    "default_tf_ps": 50,
+    "v_logic_high": 1.2,
+    "v_logic_low": 0.0,
+    
+    "operation_sequence": [
+      {"phase": "IDLE", "duration_ns": 5.0},
+      {"phase": "SAEQ_OFF", "duration_ns": 2.0},
+      {"phase": "WLON", "duration_ns": 15.0},
+      {"phase": "SAEN", "duration_ns": 10.0},
+      {"phase": "RW_CMD", "duration_ns": 5.0},
+      {"phase": "WLOFF", "duration_ns": 5.0},
+      {"phase": "PRECHARGE", "duration_ns": 10.0}
+    ],
+    
+    "signal_stimulus": [
+      {
+        "net_name": "EQ_CTRL",
+        "trigger_phase": "SAEQ_OFF",
+        "target_state": 0,
+        "offset_ps": 0,
+        "custom_tr_ps": null
+      },
+      {
+        "net_name": "WL_EN",
+        "trigger_phase": "WLON",
+        "target_state": 1,
+        "offset_ps": 150,
+        "custom_tr_ps": 80
+      },
+      {
+        "net_name": "SAN_EN",
+        "trigger_phase": "SAEN",
+        "target_state": 1,
+        "offset_ps": 50,
+        "custom_tr_ps": null
+      },
+      {
+        "net_name": "WL_EN",
+        "trigger_phase": "WLOFF",
+        "target_state": 0,
+        "offset_ps": 0,
+        "custom_tf_ps": 100
+      }
+    ]
+  }
+}
