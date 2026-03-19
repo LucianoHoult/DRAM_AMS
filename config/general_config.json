@@ -79,15 +79,27 @@
   },
 
   "pattern_config": {
-    "storage_init": {
-      "pattern_type": "checkerboard",
-      "v_high": 1.2,
-      "v_low": 0.0
-    },
     "access_location": {
       "bank_idx": 0,
       "row_idx": 128,
       "col_idx": 64
     }
   }
+
+  "topology_initializer": {
+    "output_file": "init_storage.ic",
+    "voltage_levels": {
+      "v_high": 1.2,
+      "v_low": 0.0
+    },
+    "path_template": "X_BANK.X_ARRAY_SEC_{sec}.X_MAT_{mat}.X_CELL_{row}_{col}.SN",
+    "address_space": {
+      "sec": [0],
+      "mat": [0],
+      "row": [0, 255],
+      "col": [0, 63]
+    },
+    "pattern": "checkerboard" 
+  }
+  
 }
