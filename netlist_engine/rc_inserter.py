@@ -1,4 +1,5 @@
 # netlist_engine/rc_inserter.py
+import re
 from typing import Dict, Any, List
 from .cdl_parser import NetlistIR, Instance, Subckt
 
@@ -129,19 +130,55 @@ class RCInserter:
             
             # 更新 source，为下一段做准备
             current_source_net = segment_out_net
+            
+    def _expand_bus_nets(self, net_pattern: str, target_subckt: Subckt) -> List[str]:
+        """
+        根据 Config 中的 net_pattern 寻找实际线名。
+        如果包含 '*'，则使用正则扫描 target_subckt 内部所有的端口；
+        如果不包含 '*'，则假定为精确线名，直接返回单元素列表。
+        """
+        if '*' not in net_pattern:
+            return [net_pattern]
 
+        # 构造正则表达式：
+        # 例如 'WL<*>' -> 经历 re.escape 变成 'WL\<\\*\>' -> 替换 \* 变成 'WL\<.*\>'
+        # 使用 ^ 和 $ 确保全字匹配，防止 'WL<0>' 匹配到 'WL<0>_old'
+        regex_str = re.escape(net_pattern).replace(r'\*', r'.*')
+        pattern = re.compile(f"^{regex_str}$")
+
+        matched_nets = set()
+        
+        # 遍历作用域内所有 instance 的所有 port
+        for inst in target_subckt.instances.values():
+            for port in inst.ports:
+                if pattern.match(port):
+                    matched_nets.add(port)
+                    
+        return list(matched_nets)
+        
     def process_all_from_config(self):
         """主入口：遍历 Config，执行所有 RC 插入任务"""
         rc_config = self.config.get("rc_extraction", {})
         unit_metrics = rc_config.get("unit_metrics", {})
 
+        # 处理 Core Array (星型拓扑)
         core_array = rc_config.get("core_array", {})
-        for net_name, params in core_array.items():
-            # 实际工程中，这里的 net_name 可能是 "WL" (总线前缀)
-            # 你需要在 target_subckt 的端口或 net 列表中展开匹配 "WL<0>", "WL<1>"...
-            # 为保持示例精简，此处假定只处理单个指定的 net，或者需要在函数内增加总线展开逻辑。
-            self._process_star_topology(net_name, params, unit_metrics)
+        for net_pattern, params in core_array.items():
+            target_subckt = self.ir.subckts.get(params["parent_subckt"])
+            if not target_subckt:
+                continue
+                
+            actual_nets = self._expand_bus_nets(net_pattern, target_subckt)
+            for actual_net in actual_nets:
+                self._process_star_topology(actual_net, params, unit_metrics)
 
+        # 处理 Global Routes (菊花链拓扑)
         global_routes = rc_config.get("global_routes", {})
-        for net_name, params in global_routes.items():
-            self._process_daisy_chain_topology(net_name, params, unit_metrics)
+        for net_pattern, params in global_routes.items():
+            target_subckt = self.ir.subckts.get(params["parent_subckt"])
+            if not target_subckt:
+                continue
+                
+            actual_nets = self._expand_bus_nets(net_pattern, target_subckt)
+            for actual_net in actual_nets:
+                self._process_daisy_chain_topology(actual_net, params, unit_metrics)
