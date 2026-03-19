@@ -102,4 +102,30 @@
     "pattern": "checkerboard" 
   }
   
+  "testbench_builder": {
+    "output_tb_path": "sim_workspace/top_tb.sp",
+    "includes": {
+      "tech_lib": "models/finfet_tt.lib",
+      "netlist": "output/modified_dram_bank.cdl",
+      "stimulus": "output/stimulus.sp",
+      "init_cond": "output/init_storage.ic"
+    },
+    "global_options": [
+      "post", 
+      "probe", 
+      "nomod", 
+      "co=132", 
+      "runlvl=5"
+    ],
+    "temperature_c": 25,
+    "top_instance": {
+      "name": "X_DUT",
+      "ref_model": "DRAM_BANK",
+      "ports": [
+        "MWL_EVEN", "MWL_ODD", "SAN_EN", "SAP_EN", "EQ_CTRL", 
+        "CSL", "LIO", "LIO_B", "VPP", "VSS", 
+        "BL<0>", "BL<1>", "BL_B<0>", "BL_B<1>"
+      ]
+    }
+  }
 }
