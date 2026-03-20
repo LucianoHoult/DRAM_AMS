@@ -1,0 +1,8 @@
+$DATA1 SOURCE='HSPICE' VERSION='T-2022.06'
+.TITLE 'DRAM Array tRAS Evaluation - TT 25C'
+alter# tras_core t_sense_margin 
++ t_pre_fail temper 
++ vdd_meas
+1 1.5023e-08 2.1050e-09 
++ failed 25.0000 
++ 1.2000
