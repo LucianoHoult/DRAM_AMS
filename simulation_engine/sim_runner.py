@@ -49,17 +49,18 @@ class SimRunner:
         except subprocess.CalledProcessError:
             print(f"[Error] Local run failed for {sp_path}")
             return False
-
-    def _run_cluster(self, sp_path: str, run_dir: str, output_prefix: str) -> bool:
-        """通过 asub 提交集群并轮询状态"""
+            
+def _run_cluster(self, sp_path: str, run_dir: str, output_prefix: str) -> bool:
+        """通过集群系统提交任务并轮询状态"""
         c_settings = self.config.get("cluster_settings", {})
         submit_cmd_template = c_settings.get("submit_cmd", "asub")
-        poll_cmd = c_settings.get("poll_cmd", "ajob")
+        poll_cmd_base = c_settings.get("poll_cmd", "ajob")
         poll_interval = c_settings.get("poll_interval_seconds", 15)
-        job_id_regex = c_settings.get("job_id_regex", r"Job <(\d+)>")
+        job_id_regex = c_settings.get("job_id_regex", r"(?m)^(\d+)\s+Submit")
+        job_done_keyword = c_settings.get("job_done_keyword", "query successfully, no matches.")
 
         job_name = os.path.basename(output_prefix)
-        # 拼接提交命令: asub -q normal -N tb_TT hspice -i tb.sp -o tb
+        # asub 命令组装
         full_submit_cmd = f"{submit_cmd_template.format(job_name=job_name)} hspice -i {sp_path} -o {output_prefix}"
 
         # 1. 提交任务
@@ -72,38 +73,43 @@ class SimRunner:
             print(f"[Error] Failed to submit job: {full_submit_cmd}\n{e.stderr}")
             return False
 
-        # 2. 正则提取 Job ID
+        # 2. 精准提取 Job ID
         match = re.search(job_id_regex, submit_res.stdout)
         if not match:
-            print(f"[Error] Could not extract Job ID from: {submit_res.stdout}")
+            print(f"[Error] Could not extract Job ID from stdout:\n{submit_res.stdout}")
             return False
         job_id = match.group(1)
         print(f"[Info] Submitted {job_name} with Job ID: {job_id}")
 
         # 3. 轮询任务状态
         start_time = time.time()
+        # 组装查询命令，直接查该 ID 可以减小服务器调度器压力
+        poll_cmd = f"{poll_cmd_base} | grep {job_id}"
+        
         while True:
             if time.time() - start_time > self.timeout:
-                print(f"[Error] Cluster job {job_id} timeout.")
-                # 可以在此处补充 akill {job_id} 的命令
+                print(f"[Error] Cluster job {job_id} timeout. Killing job...")
+                # 超时强杀逻辑预留
+                subprocess.run(f"akill {job_id}", shell=True, capture_output=True)
                 return False
                 
             time.sleep(poll_interval)
             
-            # 使用 ajob 并 grep 对应的 job_id
-            # 注意：需根据实际 ajob 输出格式调整，通常 ajob 返回空或查不到即代表结束
+            # 执行 ajob 查询
             poll_res = subprocess.run(
-                f"{poll_cmd} | grep {job_id}", shell=True, 
+                poll_cmd, shell=True, 
                 capture_output=True, text=True
             )
             
-            # 如果 grep 没有抓到包含该 job_id 的行，说明任务已不在队列中（完成或被杀）
-            if not poll_res.stdout.strip():
+            stdout_text = poll_res.stdout.strip()
+            
+            # 判断逻辑：如果 grep 抓不到任何内容，或者系统明确返回了 no matches 关键字，均视为退出队列
+            if not stdout_text or job_done_keyword in stdout_text:
                 break
 
-        # 4. 任务从队列消失后，验证 .lis 文件确认是否成功生成
+        # 4. 确认结果合法性
         return self._verify_lis_success(f"{output_prefix}.lis")
-
+    
     def _worker(self, sp_path: str) -> Dict[str, Any]:
         """单任务调度入口"""
         run_dir = os.path.dirname(os.path.abspath(sp_path)) or "."
