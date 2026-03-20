@@ -142,8 +142,10 @@
       "submit_cmd": "asub -q normal -N {job_name}",
       "poll_cmd": "ajob",
       "poll_interval_seconds": 15,
-      "job_id_regex": "Job <(\\d+)>" 
+      "job_id_regex": "(?m)^(\\d+)\\s+Submit job successfully",
+      "job_done_keyword": "query successfully, no matches."
     }
+    
   }
   
 }
