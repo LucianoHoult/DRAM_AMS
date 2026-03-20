@@ -128,4 +128,22 @@
       ]
     }
   }
+
+  "sim_runner": {
+    "execution_mode": "cluster", 
+    "max_parallel_jobs": 8,
+    "timeout_seconds": 7200,
+    
+    "local_settings": {
+      "executable": "hspice"
+    },
+    
+    "cluster_settings": {
+      "submit_cmd": "asub -q normal -N {job_name}",
+      "poll_cmd": "ajob",
+      "poll_interval_seconds": 15,
+      "job_id_regex": "Job <(\\d+)>" 
+    }
+  }
+  
 }
