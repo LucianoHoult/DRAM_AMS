@@ -131,63 +131,6 @@ class RCInserter:
             # 更新 source，为下一段做准备
             current_source_net = segment_out_net
             
-    def _collect_nets_from_sources(
-        self,
-        target_subckt: Subckt,
-        *,
-        include_ports: bool = True,
-        instance_names: Optional[Iterable[str]] = None,
-    ) -> Set[str]:
-        """收集指定范围内可见的 net 名称。"""
-        visible_nets: Set[str] = set(target_subckt.ports if include_ports else [])
-        if instance_names is None:
-            instances = target_subckt.instances.values()
-        else:
-            instances = (
-                target_subckt.instances[name]
-                for name in instance_names
-                if name in target_subckt.instances
-            )
-
-        for inst in instances:
-            visible_nets.update(inst.ports)
-        return visible_nets
-
-    def _resolve_bus_filter_nets(self, params: Dict[str, Any], target_subckt: Subckt) -> Optional[Set[str]]:
-        """根据拓扑上下文限制可展开的 net，避免为未驱动的支路插入 RC。"""
-        driver_name = params.get("driver_inst")
-        if driver_name == "PORT":
-            upstream_nets = self._collect_nets_from_sources(target_subckt, include_ports=True, instance_names=[])
-        elif driver_name:
-            upstream_nets = self._collect_nets_from_sources(
-                target_subckt,
-                include_ports=False,
-                instance_names=[driver_name],
-            )
-        else:
-            upstream_nets = self._collect_nets_from_sources(target_subckt)
-
-        target_names = params.get("target_insts")
-        if target_names:
-            downstream_nets = self._collect_nets_from_sources(
-                target_subckt,
-                include_ports=False,
-                instance_names=target_names,
-            )
-            return upstream_nets & downstream_nets
-
-        topology = params.get("topology")
-        if topology:
-            downstream_names = [segment["target_inst"] for segment in topology if "target_inst" in segment]
-            downstream_nets = self._collect_nets_from_sources(
-                target_subckt,
-                include_ports=False,
-                instance_names=downstream_names,
-            )
-            return upstream_nets & downstream_nets if downstream_nets else upstream_nets
-
-        return upstream_nets
-
     def _expand_bus_nets(
         self,
         net_pattern: Any,
@@ -221,13 +164,22 @@ class RCInserter:
 
         regex_str = re.escape(net_pattern).replace(r"\*", r"[^\s]+")
         pattern = re.compile(f"^{regex_str}$")
-
-        visible_nets = self._collect_nets_from_sources(target_subckt)
-        if filter_nets is not None:
-            visible_nets &= filter_nets
-
-        return sorted(net for net in visible_nets if pattern.match(net))
         
+        valid_nets = set()
+        
+        # 确定合法的线网池：仅从驱动端获取
+        if driver_name == "PORT":
+            source_ports = target_subckt.ports
+        else:
+            driver_inst = target_subckt.instances.get(driver_name)
+            source_ports = driver_inst.ports if driver_inst else []
+
+        for port in source_ports:
+            if pattern.match(port):
+                valid_nets.add(port)
+                    
+        return sorted(list(valid_nets))
+
     def process_all_from_config(self):
         """主入口：遍历 Config，执行所有 RC 插入任务"""
         rc_config = self.config.get("rc_extraction", {})
@@ -258,7 +210,7 @@ class RCInserter:
             actual_nets = self._expand_bus_nets(
                 net_pattern,
                 target_subckt,
-                self._resolve_bus_filter_nets(params, target_subckt),
+                params["driver_inst"],
             )
             for actual_net in actual_nets:
                 self._process_daisy_chain_topology(actual_net, params, unit_metrics)
