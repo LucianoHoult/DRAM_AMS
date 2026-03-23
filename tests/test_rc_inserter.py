@@ -55,3 +55,37 @@ def test_star_topology_insertion(sample_ir):
     rc_inst = target_subckt.instances[rc_inst_name]
     assert rc_inst.ports == ["WL<0>", "WL<0>_sink"]
     assert rc_inst.params["R_tot"] == "100.0"
+    
+def test_wildcard_star_topology_only_expands_upstream_connected_nets():
+    fixture_path = Path(__file__).parent / "fixtures" / "mock_dram_bank.cdl"
+    ir = CDLParser(str(fixture_path)).parse()
+    config = {
+        "rc_extraction": {
+            "unit_metrics": {"M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 2e-16}},
+            "core_array": {
+                "WL<*>": {
+                    "layer": "M1_WL_layer",
+                    "length_um": 256.0,
+                    "pi_stages": 4,
+                    "parent_subckt": "ARRAY_SECTION",
+                    "driver_inst": "X_SWD_E",
+                    "target_insts": ["X_MAT_0"],
+                }
+            },
+        }
+    }
+
+    inserter = RCInserter(ir, config)
+    inserter.process_all_from_config()
+
+    array_section = ir.subckts["ARRAY_SECTION"]
+    assert "X_RC_STAR_WL_0" in array_section.instances
+    assert "X_RC_STAR_WL_2" in array_section.instances
+    assert "X_RC_STAR_WL_1" not in array_section.instances
+    assert "X_RC_STAR_WL_3" not in array_section.instances
+
+    mat_ports = array_section.instances["X_MAT_0"].ports
+    assert "WL<0>_sink" in mat_ports
+    assert "WL<2>_sink" in mat_ports
+    assert "WL<1>" in mat_ports
+    assert "WL<3>" in mat_ports
