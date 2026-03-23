@@ -1,9 +1,9 @@
 {
   "rc_extraction": {
     "unit_metrics": {
-      "M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 2e-16},
-      "M2_BL_layer": {"R_per_um": 0.3, "C_per_um": 1.5e-16},
-      "M3_global_layer": {"R_per_um": 0.1, "C_per_um": 1e-16}
+      "M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 0.2e-15},
+      "M2_BL_layer": {"R_per_um": 0.3, "C_per_um": 0.15e-15},
+      "M3_global_layer": {"R_per_um": 0.1, "C_per_um": 0.1e-15}
     },
     "core_array": {
       "WL<*>": {
