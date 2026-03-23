@@ -195,7 +195,7 @@ class RCInserter:
             actual_nets = self._expand_bus_nets(
                 net_pattern,
                 target_subckt,
-                self._resolve_bus_filter_nets(params, target_subckt),
+                params["driver_inst"],
             )
             for actual_net in actual_nets:
                 self._process_star_topology(actual_net, params, unit_metrics)
