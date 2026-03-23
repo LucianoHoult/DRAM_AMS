@@ -50,7 +50,7 @@ class SimRunner:
             print(f"[Error] Local run failed for {sp_path}")
             return False
             
-def _run_cluster(self, sp_path: str, run_dir: str, output_prefix: str) -> bool:
+    def _run_cluster(self, sp_path: str, run_dir: str, output_prefix: str) -> bool:
         """通过集群系统提交任务并轮询状态"""
         c_settings = self.config.get("cluster_settings", {})
         submit_cmd_template = c_settings.get("submit_cmd", "asub")

@@ -1,7 +1,6 @@
 {
-  
   "topology_initializer": {
-    "output_file": "init_storage.ic",
+    "output_file": "output/init_storage.ic",
     "voltage_levels": {
       "v_high": 1.2,
       "v_low": 0.0
@@ -10,12 +9,11 @@
     "address_space": {
       "sec": [0],
       "mat": [0],
-      "row": [0, 255],
-      "col": [0, 63]
+      "row": [0, 3],
+      "col": [0, 1]
     },
-    "pattern": "checkerboard" 
-  }
-  
+    "pattern": "checkerboard"
+  },
   "testbench_builder": {
     "output_tb_path": "sim_workspace/top_tb.sp",
     "includes": {
@@ -25,10 +23,10 @@
       "init_cond": "output/init_storage.ic"
     },
     "global_options": [
-      "post", 
-      "probe", 
-      "nomod", 
-      "co=132", 
+      "post",
+      "probe",
+      "nomod",
+      "co=132",
       "runlvl=5"
     ],
     "temperature_c": 25,
@@ -36,22 +34,19 @@
       "name": "X_DUT",
       "ref_model": "DRAM_BANK",
       "ports": [
-        "MWL_EVEN", "MWL_ODD", "SAN_EN", "SAP_EN", "EQ_CTRL", 
-        "CSL", "LIO", "LIO_B", "VPP", "VSS", 
+        "MWL_EVEN", "MWL_ODD", "SAN_EN", "SAP_EN", "EQ_CTRL",
+        "CSL", "LIO", "LIO_B", "VPP", "VSS",
         "BL<0>", "BL<1>", "BL_B<0>", "BL_B<1>"
       ]
     }
-  }
-
+  },
   "sim_runner": {
-    "execution_mode": "cluster", 
+    "execution_mode": "cluster",
     "max_parallel_jobs": 8,
     "timeout_seconds": 7200,
-    
     "local_settings": {
       "executable": "hspice"
     },
-    
     "cluster_settings": {
       "submit_cmd": "asub -q normal -N {job_name}",
       "poll_cmd": "ajob",
@@ -59,7 +54,5 @@
       "job_id_regex": "(?m)^(\\d+)\\s+Submit job successfully",
       "job_done_keyword": "query successfully, no matches."
     }
-    
   }
-  
 }

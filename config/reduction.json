@@ -1,6 +1,5 @@
 {
-  
- "reduction_models": {
+  "reduction_models": {
     "mode": "placeholder",
     "targets": [
       {
@@ -18,5 +17,5 @@
         "ignore_ports": ["VSS", "VPP"]
       }
     ]
-  },
+  }
 }

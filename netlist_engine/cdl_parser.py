@@ -68,17 +68,15 @@ class CDLParser:
                 inst_name = tokens[0]
                 params = {}
                 
-                # 逆向扫描提取参数
+                # 提取尾部参数，同时保留原有书写顺序
                 end_idx = len(tokens)
-                for i in range(len(tokens)-1, 0, -1):
-                    if '=' in tokens[i]:
-                        # 处理诸如 W=0.4u 的参数
-                        key, val = tokens[i].split('=', 1)
-                        params[key] = val
-                        end_idx = i
-                    else:
-                        break # 遇到非参数Token，停止扫描
-                
+                while end_idx > 1 and '=' in tokens[end_idx - 1]:
+                    end_idx -= 1
+
+                for token in tokens[end_idx:]:
+                    key, val = token.split('=', 1)
+                    params[key] = val
+
                 # 剩余的Tokens列表结构为: [inst_name, port1, port2, ..., ref_model]
                 remaining_tokens = tokens[:end_idx]
                 
