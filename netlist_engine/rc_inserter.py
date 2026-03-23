@@ -1,6 +1,6 @@
 # netlist_engine/rc_inserter.py
 import re
-from typing import Dict, Any, List
+from typing import Dict, Any, Iterable, List, Optional, Set
 from .cdl_parser import NetlistIR, Instance, Subckt
 
 class RCInserter:
@@ -131,7 +131,69 @@ class RCInserter:
             # 更新 source，为下一段做准备
             current_source_net = segment_out_net
             
-    def _expand_bus_nets(self, net_pattern: Any, target_subckt: Subckt) -> List[str]:
+    def _collect_nets_from_sources(
+        self,
+        target_subckt: Subckt,
+        *,
+        include_ports: bool = True,
+        instance_names: Optional[Iterable[str]] = None,
+    ) -> Set[str]:
+        """收集指定范围内可见的 net 名称。"""
+        visible_nets: Set[str] = set(target_subckt.ports if include_ports else [])
+        if instance_names is None:
+            instances = target_subckt.instances.values()
+        else:
+            instances = (
+                target_subckt.instances[name]
+                for name in instance_names
+                if name in target_subckt.instances
+            )
+
+        for inst in instances:
+            visible_nets.update(inst.ports)
+        return visible_nets
+
+    def _resolve_bus_filter_nets(self, params: Dict[str, Any], target_subckt: Subckt) -> Optional[Set[str]]:
+        """根据拓扑上下文限制可展开的 net，避免为未驱动的支路插入 RC。"""
+        driver_name = params.get("driver_inst")
+        if driver_name == "PORT":
+            upstream_nets = self._collect_nets_from_sources(target_subckt, include_ports=True, instance_names=[])
+        elif driver_name:
+            upstream_nets = self._collect_nets_from_sources(
+                target_subckt,
+                include_ports=False,
+                instance_names=[driver_name],
+            )
+        else:
+            upstream_nets = self._collect_nets_from_sources(target_subckt)
+
+        target_names = params.get("target_insts")
+        if target_names:
+            downstream_nets = self._collect_nets_from_sources(
+                target_subckt,
+                include_ports=False,
+                instance_names=target_names,
+            )
+            return upstream_nets & downstream_nets
+
+        topology = params.get("topology")
+        if topology:
+            downstream_names = [segment["target_inst"] for segment in topology if "target_inst" in segment]
+            downstream_nets = self._collect_nets_from_sources(
+                target_subckt,
+                include_ports=False,
+                instance_names=downstream_names,
+            )
+            return upstream_nets & downstream_nets if downstream_nets else upstream_nets
+
+        return upstream_nets
+
+    def _expand_bus_nets(
+        self,
+        net_pattern: Any,
+        target_subckt: Subckt,
+        filter_nets: Optional[Set[str]] = None,
+    ) -> List[str]:
         """
         根据 Config 中的 net_pattern 寻找实际线名。
         兼容以下格式：
@@ -139,27 +201,30 @@ class RCInserter:
         - {"pattern": "WL<*>"} 这样的对象
         - {"nets": ["WL<0>", "WL<2>"]} 这样的显式列表
         - ["WL<0>", "WL<2>"] 这样的列表
+        可通过 filter_nets 进一步限制为真正连通的 nets。
         """
         if isinstance(net_pattern, dict):
             if "nets" in net_pattern:
-                return list(net_pattern["nets"])
+                nets = list(net_pattern["nets"])
+                return [net for net in nets if filter_nets is None or net in filter_nets]
             net_pattern = net_pattern.get("pattern", "")
 
         if isinstance(net_pattern, list):
-            return list(net_pattern)
+            nets = list(net_pattern)
+            return [net for net in nets if filter_nets is None or net in filter_nets]
 
         if not isinstance(net_pattern, str) or not net_pattern:
             return []
 
         if "*" not in net_pattern:
-            return [net_pattern]
+            return [net_pattern] if filter_nets is None or net_pattern in filter_nets else []
 
         regex_str = re.escape(net_pattern).replace(r"\*", r"[^\s]+")
         pattern = re.compile(f"^{regex_str}$")
 
-        visible_nets = set(target_subckt.ports)
-        for inst in target_subckt.instances.values():
-            visible_nets.update(inst.ports)
+        visible_nets = self._collect_nets_from_sources(target_subckt)
+        if filter_nets is not None:
+            visible_nets &= filter_nets
 
         return sorted(net for net in visible_nets if pattern.match(net))
         
@@ -175,7 +240,11 @@ class RCInserter:
             if not target_subckt:
                 continue
                 
-            actual_nets = self._expand_bus_nets(net_pattern, target_subckt)
+            actual_nets = self._expand_bus_nets(
+                net_pattern,
+                target_subckt,
+                self._resolve_bus_filter_nets(params, target_subckt),
+            )
             for actual_net in actual_nets:
                 self._process_star_topology(actual_net, params, unit_metrics)
 
@@ -186,6 +255,10 @@ class RCInserter:
             if not target_subckt:
                 continue
                 
-            actual_nets = self._expand_bus_nets(net_pattern, target_subckt)
+            actual_nets = self._expand_bus_nets(
+                net_pattern,
+                target_subckt,
+                self._resolve_bus_filter_nets(params, target_subckt),
+            )
             for actual_net in actual_nets:
                 self._process_daisy_chain_topology(actual_net, params, unit_metrics)
