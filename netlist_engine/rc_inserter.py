@@ -131,30 +131,37 @@ class RCInserter:
             # 更新 source，为下一段做准备
             current_source_net = segment_out_net
             
-    def _expand_bus_nets(self, net_pattern: str, target_subckt: Subckt) -> List[str]:
+    def _expand_bus_nets(self, net_pattern: Any, target_subckt: Subckt) -> List[str]:
         """
         根据 Config 中的 net_pattern 寻找实际线名。
-        如果包含 '*'，则使用正则扫描 target_subckt 内部所有的端口；
-        如果不包含 '*'，则假定为精确线名，直接返回单元素列表。
+        兼容以下格式：
+        - "WL<*>" / "BL<0>" 这样的字符串
+        - {"pattern": "WL<*>"} 这样的对象
+        - {"nets": ["WL<0>", "WL<2>"]} 这样的显式列表
+        - ["WL<0>", "WL<2>"] 这样的列表
         """
-        if '*' not in net_pattern:
+        if isinstance(net_pattern, dict):
+            if "nets" in net_pattern:
+                return list(net_pattern["nets"])
+            net_pattern = net_pattern.get("pattern", "")
+
+        if isinstance(net_pattern, list):
+            return list(net_pattern)
+
+        if not isinstance(net_pattern, str) or not net_pattern:
+            return []
+
+        if "*" not in net_pattern:
             return [net_pattern]
 
-        # 构造正则表达式：
-        # 例如 'WL<*>' -> 经历 re.escape 变成 'WL\<\\*\>' -> 替换 \* 变成 'WL\<.*\>'
-        # 使用 ^ 和 $ 确保全字匹配，防止 'WL<0>' 匹配到 'WL<0>_old'
-        regex_str = re.escape(net_pattern).replace(r'\*', r'.*')
+        regex_str = re.escape(net_pattern).replace(r"\*", r"[^\s]+")
         pattern = re.compile(f"^{regex_str}$")
 
-        matched_nets = set()
-        
-        # 遍历作用域内所有 instance 的所有 port
+        visible_nets = set(target_subckt.ports)
         for inst in target_subckt.instances.values():
-            for port in inst.ports:
-                if pattern.match(port):
-                    matched_nets.add(port)
-                    
-        return list(matched_nets)
+            visible_nets.update(inst.ports)
+
+        return sorted(net for net in visible_nets if pattern.match(net))
         
     def process_all_from_config(self):
         """主入口：遍历 Config，执行所有 RC 插入任务"""

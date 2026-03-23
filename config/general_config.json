@@ -4,12 +4,11 @@
     "target_simulator": "hspice",
     "corner": "TT_25C"
   },
-  
   "netlist_rules": {
     "top_subckt": "DRAM_BANK",
     "bus_format": "<>"
   },
-    
+  "netlist_engine_io": {
+    "mimic_cdl": "tests/fixtures/mock_dram_bank.cdl"
   }
-  
 }
