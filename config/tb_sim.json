@@ -9,8 +9,8 @@
     "address_space": {
       "sec": [0],
       "mat": [0],
-      "row": [0, 255],
-      "col": [0, 63]
+      "row": [0, 3],
+      "col": [0, 1]
     },
     "pattern": "checkerboard"
   },
