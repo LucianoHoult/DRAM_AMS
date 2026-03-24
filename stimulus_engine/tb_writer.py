@@ -43,7 +43,7 @@ class TBWriter:
             # 这里简化为基础 include
             lines.append(f".include '{includes['tech_lib']}'")
             
-        for key in ["netlist", "stimulus", "init_cond"]:
+        for key in ["netlist", "power_supplies", "stimulus", "init_cond"]:
             if key in includes and includes[key]:
                 lines.append(f".include '{includes[key]}'")
 

@@ -5,11 +5,26 @@ from typing import Dict, Any
 class TopologyInitializer:
     def __init__(self, config: Dict[str, Any]):
         self.config = config.get("topology_initializer", {})
+        self.global_voltages = config.get("power_domains", {}).get("voltage_levels", {})
         self.voltages = self.config.get("voltage_levels", {"v_high": 1.2, "v_low": 0.0})
+
+    def _resolve_voltage(self, value: Any) -> float:
+        """支持直接电压值或全局电压别名（如 VARY/VSS）。"""
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            if value in self.global_voltages:
+                return float(self.global_voltages[value])
+            try:
+                return float(value)
+            except ValueError as exc:
+                raise ValueError(f"Unknown voltage alias: {value}") from exc
+        raise ValueError(f"Invalid voltage value: {value}")
 
     def _get_voltage(self, state: int) -> float:
         """将逻辑状态 1/0 转换为绝对电压"""
-        return self.voltages["v_high"] if state == 1 else self.voltages["v_low"]
+        raw = self.voltages["v_high"] if state == 1 else self.voltages["v_low"]
+        return self._resolve_voltage(raw)
 
     def _get_state(self, row: int, col: int, pattern: str) -> int:
         """

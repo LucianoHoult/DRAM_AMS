@@ -46,17 +46,8 @@ M_Y2 BL_B<0> CSL LIO_B VSS nmos_mac W=0.4u L=0.1u
 * LEVEL 2: ARRAY_SECTION & SA_SECTION
 * ----------------------------------------------------------------------
 .SUBCKT MAT BL<0> BL<1> WL<0> WL<1> WL<2> WL<3> VSS
-* 2x4 cell matrix example
-X_CELL_0_0 BL<0> WL<0> SN_0_0 VSS BITCELL
-X_CELL_0_1 BL<1> WL<0> SN_0_1 VSS BITCELL
-X_CELL_1_0 BL<0> WL<1> SN_1_0 VSS BITCELL
-X_CELL_1_1 BL<1> WL<1> SN_1_1 VSS BITCELL
-* Line continuation test in instantiation
-X_CELL_2_0 BL<0> WL<2> SN_2_0 
-+ VSS BITCELL
-X_CELL_2_1 BL<1> WL<2> SN_2_1 VSS BITCELL
-X_CELL_3_0 BL<0> WL<3> SN_3_0 VSS BITCELL
-X_CELL_3_1 BL<1> WL<3> SN_3_1 VSS BITCELL
+* NOTE: post-PEX exported decks may omit internal BITCELL definitions.
+* Keep MAT body intentionally empty for parser/flow compatibility tests.
 .ENDS MAT
 
 .SUBCKT ARRAY_SECTION BL<0> BL<1> MWL_E MWL_O VPP VSS

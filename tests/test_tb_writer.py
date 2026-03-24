@@ -9,6 +9,7 @@ def test_tb_writer_generates_expected_top_level_testbench(tmp_path):
             "includes": {
                 "tech_lib": "models/tt.lib",
                 "netlist": "output/netlist.cdl",
+                "power_supplies": "output/power_supplies.inc",
                 "stimulus": "output/stimulus.sp",
                 "init_cond": "output/init.ic",
             },
@@ -29,5 +30,6 @@ def test_tb_writer_generates_expected_top_level_testbench(tmp_path):
     assert ".temp -40" in text
     assert ".include 'models/tt.lib'" in text
     assert ".include 'output/netlist.cdl'" in text
+    assert ".include 'output/power_supplies.inc'" in text
     assert "X_BANK WL<0> BL<0> VDD VSS DRAM_BANK" in text
     assert text.rstrip().endswith(".end")

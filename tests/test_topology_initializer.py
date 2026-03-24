@@ -5,11 +5,14 @@ from stimulus_engine.topology_initializer import TopologyInitializer
 def sample_ic_config():
     """构造一个 2x2 阵列的极简配置用于测试"""
     return {
+        "power_domains": {
+            "voltage_levels": {"VARY": 1.0, "VSS": 0.0}
+        },
         "topology_initializer": {
             "output_file": "dummy.ic",
             "voltage_levels": {
-                "v_high": 1.2,
-                "v_low": 0.0
+                "v_high": "VARY",
+                "v_low": "VSS"
             },
             "path_template": "X_BANK.X_SEC_{sec}.X_MAT_{mat}.X_CELL_{row}_{col}.SN",
             "address_space": {
@@ -26,7 +29,7 @@ def test_voltage_and_range_parsing(sample_ic_config):
     initializer = TopologyInitializer(sample_ic_config)
     
     # 1. 验证电压映射
-    assert initializer._get_voltage(1) == 1.2
+    assert initializer._get_voltage(1) == 1.0
     assert initializer._get_voltage(0) == 0.0
     
     # 2. 验证地址范围解析 (闭区间转换为 Python 的前闭后开 range)
@@ -87,10 +90,10 @@ def test_ic_file_generation(sample_ic_config, tmp_path):
     # 验证模板映射和 Checkerboard 的电压结果
     # 坐标 (0,0) -> state 0 -> 0.0V
     assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_0_0.SN) = 0.0" in content
-    # 坐标 (0,1) -> state 1 -> 1.2V
-    assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_0_1.SN) = 1.2" in content
-    # 坐标 (1,0) -> state 1 -> 1.2V
-    assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_1_0.SN) = 1.2" in content
+    # 坐标 (0,1) -> state 1 -> 1.0V
+    assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_0_1.SN) = 1.0" in content
+    # 坐标 (1,0) -> state 1 -> 1.0V
+    assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_1_0.SN) = 1.0" in content
     # 坐标 (1,1) -> state 0 -> 0.0V
     assert ".ic V(X_BANK.X_SEC_0.X_MAT_0.X_CELL_1_1.SN) = 0.0" in content
     

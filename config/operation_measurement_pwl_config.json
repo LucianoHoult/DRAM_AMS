@@ -1,53 +1,86 @@
 {
-"stimulus_generator": {
+  "stimulus_generator": {
     "global_params": {
       "default_tr_ns": 0.1,
-      "default_tf_ns": 0.1,
-      "voltage_levels": {
-        "VSS": 0.0,
-        "VDD": 1.2,
-        "VPP": 2.5,
-        "VBLP": 0.6
-      }
+      "default_tf_ns": 0.1
     },
-    
     "timing_cases": {
       "tRAS_measurement": {
         "description": "Measure tRAS (Active to Precharge time)",
-        
         "phase_sequence": [
-          {"phase": "IDLE", "duration_ns": 5.0},
-          {"phase": "ACT_CMD", "duration_ns": 2.0},
-          {"phase": "WL_ON", "duration_ns": 15.0},
-          {"phase": "SA_SENSE", "duration_ns": 10.0},
-          {"phase": "PRE_CMD", "duration_ns": 5.0},
-          {"phase": "WL_OFF", "duration_ns": 5.0},
-          {"phase": "SA_EQ", "duration_ns": 10.0}
+          {
+            "phase": "IDLE",
+            "duration_ns": 5.0
+          },
+          {
+            "phase": "ACT_CMD",
+            "duration_ns": 2.0
+          },
+          {
+            "phase": "WL_ON",
+            "duration_ns": 15.0
+          },
+          {
+            "phase": "SA_SENSE",
+            "duration_ns": 10.0
+          },
+          {
+            "phase": "PRE_CMD",
+            "duration_ns": 5.0
+          },
+          {
+            "phase": "WL_OFF",
+            "duration_ns": 5.0
+          },
+          {
+            "phase": "SA_EQ",
+            "duration_ns": 10.0
+          }
         ],
-        
         "pin_stimulus": {
           "EQ_CTRL": {
             "init_state": "VDD",
             "transitions": [
-              {"sync_phase": "ACT_CMD", "offset_ns": 0.0, "target_state": "VSS"},
-              {"sync_phase": "SA_EQ", "offset_ns": 2.0, "target_state": "VDD"}
+              {
+                "sync_phase": "ACT_CMD",
+                "offset_ns": 0.0,
+                "target_state": "VSS"
+              },
+              {
+                "sync_phase": "SA_EQ",
+                "offset_ns": 2.0,
+                "target_state": "VDD"
+              }
             ]
           },
           "MWL_EVEN": {
             "init_state": "VSS",
             "transitions": [
-              {"sync_phase": "WL_ON", "offset_ns": 0.5, "target_state": "VPP", "tr_ns": 0.2},
-              {"sync_phase": "WL_OFF", "offset_ns": 0.0, "target_state": "VSS", "tf_ns": 0.2}
+              {
+                "sync_phase": "WL_ON",
+                "offset_ns": 0.5,
+                "target_state": "VPP",
+                "tr_ns": 0.2
+              },
+              {
+                "sync_phase": "WL_OFF",
+                "offset_ns": 0.0,
+                "target_state": "VSS",
+                "tf_ns": 0.2
+              }
             ]
           },
           "SAN_EN": {
             "init_state": "VBLP",
             "transitions": [
-              {"sync_phase": "SA_SENSE", "offset_ns": 1.0, "target_state": "VSS"}
+              {
+                "sync_phase": "SA_SENSE",
+                "offset_ns": 1.0,
+                "target_state": "VSS"
+              }
             ]
           }
         },
-        
         "measurements": [
           {
             "meas_name": "tRAS_core",
@@ -74,7 +107,7 @@
             "target": {
               "node": "BL<0>",
               "edge": "FALL",
-              "val_expr": "0.2*VDD" 
+              "val_expr": "0.2*VDD"
             }
           }
         ]
