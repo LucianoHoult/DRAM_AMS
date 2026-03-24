@@ -1,0 +1,21 @@
+{
+  "reduction_models": {
+    "mode": "placeholder",
+    "targets": [
+      {
+        "parent_subckt": "ARRAY_SECTION",
+        "inst_name": "X_MAT_1",
+        "c_eff_fF": 150.0,
+        "i_leak_nA": 10.0,
+        "ignore_ports": ["VSS", "VPP", "VDD"]
+      },
+      {
+        "parent_subckt": "SA_SECTION",
+        "inst_name": "X_BLSA_1",
+        "c_eff_fF": 20.0,
+        "i_leak_nA": 2.0,
+        "ignore_ports": ["VSS", "VPP"]
+      }
+    ]
+  }
+}

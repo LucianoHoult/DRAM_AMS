@@ -1,0 +1,49 @@
+{
+  "rc_extraction": {
+    "unit_metrics": {
+      "M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 0.2e-15},
+      "M2_BL_layer": {"R_per_um": 0.3, "C_per_um": 0.15e-15},
+      "M3_global_layer": {"R_per_um": 0.1, "C_per_um": 0.1e-15}
+    },
+    "core_array": {
+      "WL<*>": {
+        "layer": "M1_WL_layer",
+        "length_um": 256.0,
+        "pi_stages": 4,
+        "parent_subckt": "ARRAY_SECTION",
+        "driver_inst": "X_SWD_E",
+        "target_insts": ["X_MAT_0"]
+      },
+      "BL<*>": {
+        "layer": "M2_BL_layer",
+        "length_um": 512.0,
+        "pi_stages": 8,
+        "parent_subckt": "DRAM_BANK",
+        "driver_inst": "X_ARRAY_SEC_0",
+        "target_insts": ["X_SA_SEC_0"]
+      }
+    },
+    "global_routes": {
+      "CSL": {
+        "layer": "M3_global_layer",
+        "pi_stages_per_segment": 2,
+        "parent_subckt": "DRAM_BANK",
+        "driver_inst": "PORT",
+        "topology": [
+          {
+            "target_inst": "X_SA_SEC_0",
+            "segment_length_um": 120.0
+          },
+          {
+            "target_inst": "X_CROSS_HOLE_0",
+            "segment_length_um": 20.0
+          },
+          {
+            "target_inst": "X_SA_SEC_1",
+            "segment_length_um": 120.0
+          }
+        ]
+      }
+    }
+  }
+}
