@@ -1,0 +1,4 @@
+$ HSPICE measurement output
+.TITLE wrapped mt0 sample
+ alter#  tRAS_core   t_sense_margin   note
++ 1       1.234e-09  failed           PASS
