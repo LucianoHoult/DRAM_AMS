@@ -100,3 +100,51 @@ def test_ic_file_generation(sample_ic_config, tmp_path):
     # 确保没有生成超出范围的地址
     assert "X_CELL_0_2" not in content
     assert "X_CELL_2_0" not in content
+
+
+def test_ic_fallback_node_discovery_without_x_cell(tmp_path):
+    cdl_path = tmp_path / "modified_dram_bank.cdl"
+    cdl_path.write_text(
+        """
+.SUBCKT MAT_RC WL<0> WL<1> SN_ROW_0 SN_ROW_1 VSS
+R0 SN_ROW_0 VSS 1k
+R1 SN_ROW_1 VSS 1k
+.ENDS MAT_RC
+
+.SUBCKT ARRAY_SECTION BL<0> BL<1> MWL_E MWL_O VPP VSS
+X_MAT_0 BL<0> BL<1> WL<0> WL<1> SN_ROW_0 SN_ROW_1 VSS MAT_RC
+.ENDS ARRAY_SECTION
+
+.SUBCKT DRAM_BANK MWL_E MWL_O SAN SAP EQ CSL LIO LIO_B VPP VSS BL<0> BL<1>
+X_ARRAY_SEC_0 BL<0> BL<1> MWL_E MWL_O VPP VSS ARRAY_SECTION
+.ENDS DRAM_BANK
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    cfg = {
+        "power_domains": {"voltage_levels": {"VARY": 1.0, "VSS": 0.0}},
+        "netlist_rules": {"top_subckt": "DRAM_BANK"},
+        "topology_initializer": {
+            "output_file": str(tmp_path / "init.ic"),
+            "voltage_levels": {"v_high": "VARY", "v_low": "VSS"},
+            "path_template": "X_BANK.X_SEC_{sec}.X_MAT_{mat}.X_CELL_{row}_{col}.SN",
+            "address_space": {"sec": [0], "mat": [0], "row": [0, 1], "col": [0, 1]},
+            "pattern": "checkerboard",
+            "node_discovery": {
+                "fallback_path_template": "X_ARRAY_SEC_{sec}.X_MAT_{mat}.SN_ROW_{row}",
+                "fallback_address_space": {"sec": [0], "mat": [0], "row": [0, 1]},
+                "missing_template_policy": "strict",
+            },
+        },
+        "testbench_builder": {"includes": {"netlist": str(cdl_path)}},
+    }
+
+    out_ic = tmp_path / "init.ic"
+    TopologyInitializer(cfg).generate(output_path=str(out_ic))
+    content = out_ic.read_text(encoding="utf-8")
+
+    assert "X_CELL_" not in content
+    assert ".ic V(X_ARRAY_SEC_0.X_MAT_0.SN_ROW_0) = 0.0" in content
+    assert ".ic V(X_ARRAY_SEC_0.X_MAT_0.SN_ROW_1) = 1.0" in content
