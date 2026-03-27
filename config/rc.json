@@ -1,31 +1,47 @@
 {
   "rc_extraction": {
     "unit_metrics": {
-      "M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 0.2e-15},
-      "M2_BL_layer": {"R_per_um": 0.3, "C_per_um": 0.15e-15},
-      "M3_global_layer": {"R_per_um": 0.1, "C_per_um": 0.1e-15}
+      "WL": {
+        "comment": "M1_WL_layer",
+        "R_per_um": 0.5,
+        "C_per_um": 2e-16
+      },
+      "BL": {
+        "comment": "M2_BL_layer",
+        "R_per_um": 0.3,
+        "C_per_um": 1.5e-16
+      },
+      "CSL": {
+        "comment": "M3_global_layer",
+        "R_per_um": 0.1,
+        "C_per_um": 1e-16
+      }
     },
     "core_array": {
       "WL<*>": {
-        "layer": "M1_WL_layer",
+        "layer": "WL",
         "length_um": 256.0,
         "pi_stages": 4,
         "parent_subckt": "ARRAY_SECTION",
         "driver_inst": "X_SWD_E",
-        "target_insts": ["X_MAT_0"]
+        "target_insts": [
+          "X_MAT_0"
+        ]
       },
       "BL<*>": {
-        "layer": "M2_BL_layer",
+        "layer": "BL",
         "length_um": 512.0,
         "pi_stages": 8,
         "parent_subckt": "DRAM_BANK",
         "driver_inst": "X_ARRAY_SEC_0",
-        "target_insts": ["X_SA_SEC_0"]
+        "target_insts": [
+          "X_SA_SEC_0"
+        ]
       }
     },
     "global_routes": {
       "CSL": {
-        "layer": "M3_global_layer",
+        "layer": "CSL",
         "pi_stages_per_segment": 2,
         "parent_subckt": "DRAM_BANK",
         "driver_inst": "PORT",

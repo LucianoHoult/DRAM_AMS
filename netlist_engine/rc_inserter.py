@@ -36,6 +36,8 @@ class RCInserter:
     def _calc_rc(self, layer_name: str, length_um: float, unit_metrics: Dict):
         """根据长度和层信息计算总 R 和总 C"""
         metrics = unit_metrics[layer_name]
+        if "metrics" in metrics and isinstance(metrics["metrics"], dict):
+            metrics = metrics["metrics"]
         r_tot = metrics["R_per_um"] * length_um
         c_tot = metrics["C_per_um"] * length_um
         return r_tot, c_tot

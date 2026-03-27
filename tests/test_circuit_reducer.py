@@ -50,3 +50,27 @@ def test_circuit_reduction(ir_with_inactive_mat):
     i_inst = target_subckt.instances[i_inst_name]
     assert i_inst.ref_model == "DC"
     assert i_inst.params["DC"] == "10.0n"
+
+
+def test_circuit_reduction_disabled_switch_keeps_original_instance(ir_with_inactive_mat):
+    config = {
+        "reduction_models": {
+            "enabled": False,
+            "mode": "placeholder",
+            "targets": [
+                {
+                    "parent_subckt": "ARRAY_SECTION",
+                    "inst_name": "X_MAT_1",
+                    "c_eff_fF": 150.0,
+                    "i_leak_nA": 10.0,
+                }
+            ],
+        }
+    }
+
+    reducer = CircuitReducer(ir_with_inactive_mat, config)
+    reducer.process_all_from_config()
+
+    target_subckt = ir_with_inactive_mat.subckts["ARRAY_SECTION"]
+    assert "X_MAT_1" in target_subckt.instances
+    assert all(not name.startswith("C_RED_X_MAT_1") for name in target_subckt.instances)

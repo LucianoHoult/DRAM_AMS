@@ -1,17 +1,48 @@
 # stimulus_engine/stimulus_generator.py
 import json
 import re
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
 class StimulusGenerator:
     def __init__(self, config: Dict[str, Any]):
+        self.root_config = config
         self.config = config.get("stimulus_generator", {})
         self.global_params = self.config.get("global_params", {})
         self.voltages = self.global_params.get("voltage_levels", {})
+        if not self.voltages:
+            self.voltages = self.root_config.get("power_domains", {}).get("voltage_levels", {})
+        if self.voltages:
+            self.global_params["voltage_levels"] = dict(self.voltages)
         
         # 内部状态
         self.phase_time_map: Dict[str, float] = {}
         self.total_sim_time_ns: float = 0.0
+
+    def generate_power_supplies_file(self) -> str:
+        """基于 power_domains 生成全局电压源定义文件，并回填到 TB includes。"""
+        power_cfg = self.root_config.get("power_domains", {})
+        voltages = power_cfg.get("voltage_levels", {})
+        if not voltages:
+            return ""
+
+        includes = self.root_config.setdefault("testbench_builder", {}).setdefault("includes", {})
+        output_path = power_cfg.get("supply_output") or includes.get("power_supplies") or "output/power_supplies.inc"
+
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        lines = [
+            "* ==========================================",
+            "* GLOBAL POWER SUPPLIES",
+            "* ==========================================",
+        ]
+        for name, value in voltages.items():
+            lines.append(f"V_{name} {name} 0 DC {value}")
+
+        with open(output_path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+
+        includes["power_supplies"] = output_path
+        return output_path
 
     def _resolve_voltage(self, v_str: str) -> float:
         """解析电压状态，例如将 'VDD' 转换为 1.2，支持直接输入数字字符串"""
