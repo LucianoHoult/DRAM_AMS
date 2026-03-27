@@ -73,6 +73,8 @@ def ensure_parent_dir(file_path: str) -> None:
 
 
 
+
+
 def resolve_netlist_input(config: Dict[str, Any]) -> str:
     candidates: Iterable[Any] = (
         config.get("netlist_engine_io", {}).get("input_cdl"),
@@ -139,6 +141,7 @@ def run_flow(config_path: str):
     topo_init.generate(output_path=config["testbench_builder"]["includes"]["init_cond"])
 
     print(">>> Stage 4: Assembling Top-level Testbench...")
+    stim_gen.generate_power_supplies_file()
     tb_writer = TBWriter(config)
     tb_writer.generate()
 

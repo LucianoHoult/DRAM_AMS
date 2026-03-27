@@ -2,15 +2,44 @@
   "topology_initializer": {
     "output_file": "output/init_storage.ic",
     "voltage_levels": {
-      "v_high": 1.2,
-      "v_low": 0.0
+      "v_high": "VARY",
+      "v_low": "VSS"
     },
     "path_template": "X_BANK.X_ARRAY_SEC_{sec}.X_MAT_{mat}.X_CELL_{row}_{col}.SN",
+    "node_discovery": {
+      "fallback_path_templates": [
+        "X_ARRAY_SEC_{sec}.X_MAT_{mat}.SN_ROW_{row}",
+        "X_ARRAY_SEC_{sec}.X_MAT_{mat}.SN"
+      ],
+      "fallback_address_space": {
+        "sec": [
+          0
+        ],
+        "mat": [
+          0
+        ],
+        "row": [
+          0,
+          3
+        ]
+      },
+      "missing_template_policy": "lenient"
+    },
     "address_space": {
-      "sec": [0],
-      "mat": [0],
-      "row": [0, 3],
-      "col": [0, 1]
+      "sec": [
+        0
+      ],
+      "mat": [
+        0
+      ],
+      "row": [
+        0,
+        3
+      ],
+      "col": [
+        0,
+        1
+      ]
     },
     "pattern": "checkerboard"
   },
@@ -20,7 +49,8 @@
       "tech_lib": "models/finfet_tt.lib",
       "netlist": "output/modified_dram_bank.cdl",
       "stimulus": "output/stimulus.sp",
-      "init_cond": "output/init_storage.ic"
+      "init_cond": "output/init_storage.ic",
+      "power_supplies": "output/power_supplies.inc"
     },
     "global_options": [
       "post",
@@ -34,9 +64,24 @@
       "name": "X_DUT",
       "ref_model": "DRAM_BANK",
       "ports": [
-        "MWL_EVEN", "MWL_ODD", "SAN_EN", "SAP_EN", "EQ_CTRL",
-        "CSL", "LIO", "LIO_B", "VPP", "VSS",
-        "BL<0>", "BL<1>", "BL_B<0>", "BL_B<1>"
+        "MWL_EVEN",
+        "MWL_ODD",
+        "SAN_EN",
+        "SAP_EN",
+        "EQ_CTRL",
+        "CSL",
+        "LIO",
+        "LIO_B",
+        "VPP",
+        "VSS",
+        "BL<0>",
+        "BL<1>",
+        "BL_B<0>",
+        "BL_B<1>",
+        "VDD",
+        "VARY",
+        "VBLP",
+        "VBB"
       ]
     }
   },
@@ -54,5 +99,17 @@
       "job_id_regex": "(?m)^(\\d+)\\s+Submit job successfully",
       "job_done_keyword": "query successfully, no matches."
     }
+  },
+  "power_domains": {
+    "corner": "TT_25C",
+    "voltage_levels": {
+      "VDD": 1.1,
+      "VPP": 1.8,
+      "VARY": 1.0,
+      "VBLP": 0.5,
+      "VBB": -0.3,
+      "VSS": 0.0
+    },
+    "supply_output": "output/power_supplies.inc"
   }
 }

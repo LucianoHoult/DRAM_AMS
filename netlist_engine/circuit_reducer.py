@@ -48,6 +48,8 @@ class CircuitReducer:
     def process_all_from_config(self):
         """主入口：遍历配置，移除 Instance 并替换为等效负载"""
         red_config = self.config.get("reduction_models", {})
+        if red_config.get("enabled", True) is False:
+            return
         if red_config.get("mode") != "placeholder":
             return # 目前仅支持 placeholder 模式
 

@@ -24,10 +24,10 @@ def test_star_topology_insertion(sample_ir):
     # 模拟 Config 传入
     config = {
         "rc_extraction": {
-            "unit_metrics": {"M1": {"R_per_um": 1.0, "C_per_um": 1e-15}},
+            "unit_metrics": {"WL": {"comment": "M1", "R_per_um": 1.0, "C_per_um": 1e-15}},
             "core_array": {
                 "WL<0>": {
-                    "layer": "M1", "length_um": 100.0, "pi_stages": 3,
+                    "layer": "WL", "length_um": 100.0, "pi_stages": 3,
                     "parent_subckt": "ARRAY_SECTION",
                     "driver_inst": "X_SWD_E",
                     "target_insts": ["X_MAT_0"]
@@ -61,10 +61,10 @@ def test_wildcard_star_topology_only_expands_upstream_connected_nets():
     ir = CDLParser(str(fixture_path)).parse()
     config = {
         "rc_extraction": {
-            "unit_metrics": {"M1_WL_layer": {"R_per_um": 0.5, "C_per_um": 2e-16}},
+            "unit_metrics": {"WL": {"comment": "M1_WL_layer", "R_per_um": 0.5, "C_per_um": 2e-16}},
             "core_array": {
                 "WL<*>": {
-                    "layer": "M1_WL_layer",
+                    "layer": "WL",
                     "length_um": 256.0,
                     "pi_stages": 4,
                     "parent_subckt": "ARRAY_SECTION",

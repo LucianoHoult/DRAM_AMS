@@ -1,8 +1,7 @@
 {
   "project_info": {
     "name": "DRAM_Array_Digital_Twin",
-    "target_simulator": "hspice",
-    "corner": "TT_25C"
+    "target_simulator": "hspice"
   },
   "netlist_rules": {
     "top_subckt": "DRAM_BANK",

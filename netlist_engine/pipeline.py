@@ -28,7 +28,8 @@ class NetlistEnginePipeline:
 
         # 3. 拓扑修改: 静态负载精简替换
         # 依赖已被 RC_Inserter 修改过的引脚连接
-        if "reduction_models" in self.config:
+        reduction_cfg = self.config.get("reduction_models", {})
+        if reduction_cfg and reduction_cfg.get("enabled", True):
             reducer = CircuitReducer(self.ir, self.config)
             reducer.process_all_from_config()
 
